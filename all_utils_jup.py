@@ -623,7 +623,7 @@ def compute_angles(points):
     by 2pi so that each cell has an angle correspongin to one period if the cell cycle
     were to be shown as a circle.
     
-    Function written by Geir Armun Svan Hasle
+    Function written by Geir Armund Svan Hasle
 
     Parameters
     ----------
@@ -645,7 +645,7 @@ def shift_data(data, n, direction = 'positive', reverse = False):
     shifts the order of the AnnData object by a selected amount in the selected
     direction
     
-    Function written by Geir Armun Svan Hasle
+    Function written by Geir Armund Svan Hasle
 
     Parameters
     ----------
@@ -690,7 +690,7 @@ def plot_phase_bar_dist(data,bin_size,return_data=False,plot_path=None):
     The data is put into `bins' for smoothing purposes
     The return of the data and saving of the figures is optional
     
-    Function written by Geir Armun Svan Hasle
+    Function written by Geir Armund Svan Hasle
 
     Parameters
     ----------
@@ -764,7 +764,7 @@ def geir_QC_graph(adata):
     """
     Plots a kernel density plot for the different phases (G1, S, G2M)
     
-    Function written by Geir Armun Svan Hasle
+    Function written by Geir Armund Svan Hasle
 
     Parameters
     ----------
@@ -837,7 +837,7 @@ def prepare_CC_lists(CC_path):
     """
     Function that reads a file and retrieves the genes associated to each phase
     
-    Function written by Geir Armun Svan Hasle
+    Function written by Geir Armund Svan Hasle
 
     Parameters
     ----------
@@ -935,7 +935,7 @@ def perform_scanpy_pca(adata,compute,exclude_gene_counts,exclude_CC):
     of PCAs.
     Mainly created for code legibility
     
-    Function written by Geir Armun Svan Hasle
+    Function written by Geir Armund Svan Hasle
 
     Parameters
     ----------
@@ -1217,7 +1217,7 @@ def compare_marker_genes_per_phase_mod(data,cc_path, phase_choice,do_plots=True,
     The function gives the ability to plot, however it should be noted that this
     function can be quite RAM intensive and should be used accordingly
     
-    Function initially written by Geir Armun Svan Hasle, adapted for lower RAM
+    Function initially written by Geir Armund Scan Hasle, adapted for lower RAM
     usage by Yohan Lefol
 
     Parameters
@@ -1307,7 +1307,7 @@ def score_ordering_mod(expression_df,phase):
     """
     Orders the scores for a specific phase for the 'compare_marker_genes_per_phase_mod' function
     
-    Function initially written by Geir Armun Svan Hasle, adapted for
+    Function initially written by Geir Armund Svan Hasle, adapted for
     lower RAM usageby Yohan Lefol
     
 
@@ -2965,21 +2965,23 @@ def create_delay_dataframe(vlm,bin_size=100,window_size=200):
     delay_dict['inc_delay']=[]
     delay_dict['dec_gene_names']=[]
     delay_dict['dec_delay']=[]
-    # delay_dict['no_delay_inc_gene_names']=[]
-    # delay_dict['no_delay_inc_values']=[]
-    # delay_dict['no_delay_dec_gene_names']=[]
-    # delay_dict['no_delay_dec_values']=[]
     #Basis for each gene
     for gene_name in vlm.ra["Gene"]:
-        # gene_name='TRABD'
         ix=np.where(vlm.ra["Gene"]==gene_name)[0][0]
-        # print(ix)
         #smooth velocity lines
         deriv_spli,deriv_unspli=smooth_calcs(vlm,bin_size=bin_size,window_size=window_size,spli_arr=vlm.Sx_sz[ix,:],unspli_arr=vlm.Ux_sz[ix,:],choice='vel')
-
         #count symbols
         symbols_spli=count_symbols(deriv_spli,orientation=orientation)
         symbols_unspli=count_symbols(deriv_unspli,orientation=orientation)
+        
+        #Sets the 0 point of the data to be a point in time where the velocities match
+        #This ensures that any delay is between the 0 point and the end
+        #Therefore it does not overlap with the start/end
+        roll_var=np.where(symbols_spli==symbols_unspli)[0][0]
+        symbols_spli=np.roll(symbols_spli,-roll_var)
+        symbols_unspli=np.roll(symbols_unspli,-roll_var)
+ 
+        
         
         if orientation=='G2M':#Need to account for x axis reversal in G2M orientation
             symbols_spli=np.asarray(list(reversed(symbols_spli)))
@@ -2994,7 +2996,6 @@ def create_delay_dataframe(vlm,bin_size=100,window_size=200):
             if idx in index_check_unspli[0]:
                 good_indices.append(idx)
         gap_dict=find_gaps(vlm,good_indices,1,index_check_unspli)
-        # print(gap_dict)
         if len(gap_dict['start'])>0:
             start_val_list=[]
             index_check_positive_spli=np.where(symbols_spli>0)
@@ -3028,7 +3029,6 @@ def create_delay_dataframe(vlm,bin_size=100,window_size=200):
                 good_indices.append(idx)
         
         gap_dict=find_gaps(vlm,good_indices,1,index_check_unspli)
-        # print(gap_dict)
         if len(gap_dict['start'])>0:
             end_val_list=[]
             index_check_negative_spli=np.where(symbols_spli<0)
@@ -3050,7 +3050,6 @@ def create_delay_dataframe(vlm,bin_size=100,window_size=200):
         else:
             delay_dict['dec_delay'].append(0)
             delay_dict['dec_gene_names'].append(gene_name)
-        # break#break for testing
     delay_df=pd.DataFrame(dict([ (k,pd.Series(v)) for k,v in delay_dict.items() ]))
     return delay_df
 
